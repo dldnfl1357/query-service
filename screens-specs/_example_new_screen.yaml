@@ -1,0 +1,36 @@
+# 신규 화면 요청 템플릿. 복사 후 파일명을 ${screenName}.yaml 로 변경.
+# 예: cp _example_new_screen.yaml productDetail.yaml
+# 생성:  ./gradlew generateScreen --spec=screens-specs/productDetail.yaml
+
+screen: productDetail
+
+primaryKey:
+  field: productId
+  type: Long
+
+sections:
+  - name: product
+    root: true
+    queue: query-service.queues.product
+    fields:
+      - { name: productName,     type: String, length: 256 }
+      - { name: productCategory, type: String, length: 64 }
+      - { name: productPrice,    type: BigDecimal, precision: 19, scale: 2 }
+      - { name: registeredAt,    type: Instant }
+
+  - name: review
+    matchBy: productId
+    queue: query-service.queues.review
+    fields:
+      - { name: averageRating, type: BigDecimal, precision: 3, scale: 2 }
+      - { name: reviewCount,   type: Integer }
+
+  - name: inventory
+    matchBy: productId
+    queue: query-service.queues.inventory
+    fields:
+      - { name: stockQuantity, type: Integer }
+      - { name: stockStatus,   type: String, length: 32 }
+
+indexes:
+  - on: [productCategory]

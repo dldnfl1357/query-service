@@ -1,0 +1,45 @@
+screen: orderList
+table: order_list_view
+
+primaryKey:
+  field: orderId
+  type: Long
+
+sections:
+  - name: order
+    root: true
+    queue: query-service.queues.order
+    fields:
+      - { name: orderNumber, type: String, length: 64 }
+      - { name: orderStatus, type: String, length: 32 }
+      - { name: orderAmount, type: BigDecimal, precision: 19, scale: 2 }
+      - { name: orderedAt,   type: Instant }
+
+  - name: member
+    matchBy: memberId
+    queue: query-service.queues.member
+    fields:
+      - { name: memberName,  type: String, length: 128 }
+      - { name: memberEmail, type: String, length: 256 }
+      - { name: memberGrade, type: String, length: 32 }
+
+  - name: product
+    matchBy: productId
+    queue: query-service.queues.product
+    fields:
+      - { name: productName,     type: String, length: 256 }
+      - { name: productCategory, type: String, length: 64 }
+      - { name: productPrice,    type: BigDecimal, precision: 19, scale: 2 }
+
+  - name: delivery
+    matchBy: orderId
+    queue: query-service.queues.delivery
+    fields:
+      - { name: deliveryStatus,   type: String, length: 32 }
+      - { name: deliveryAddress,  type: String, length: 512 }
+      - { name: deliveryTrackedAt, type: Instant }
+
+indexes:
+  - on: [memberId]
+  - on: [productId]
+  - on: [orderedAt]

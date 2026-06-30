@@ -1,0 +1,51 @@
+screen: camelCaseName                # 필수. 패키지/클래스 prefix 가 됨
+basePackage: com.example.queryservice # 선택. 기본값 동일
+table: snake_case_view_name           # 선택. 기본 = ${screen}_view
+
+primaryKey:
+  field: camelCaseField               # 필수. 화면 row 식별자
+  column: snake_case                  # 선택. 기본 = field 의 snake_case
+  type: Long                          # 선택. 기본 Long. Long|Integer|String 지원
+
+sections:
+  - name: root                        # camelCase. 패키지명/클래스 prefix
+    root: true                        # 화면당 하나만 true. row 를 생성(upsert)하는 도메인
+    queue: query-service.queues.root  # 선택. application.yml 의 property path
+    fields:
+      - { name: someField, column: some_field, type: String, length: 64 }
+      - { name: amount, type: BigDecimal, precision: 19, scale: 2 }
+      - { name: occurredAt, type: Instant }
+
+  - name: other                       # 비-root 섹션은 PK 또는 다른 FK 로 matchBy 지정
+    matchBy: someForeignKey           # 어느 컬럼으로 row(들)을 찾아 partial update 할지
+    queue: query-service.queues.other
+    fields:
+      - { name: otherName, type: String, length: 128 }
+
+indexes:                              # 선택. 조회 쿼리에 따라
+  - on: [someField]
+  - on: [someForeignKey]
+
+# ─ 지원 타입 ──────────────────────
+# Long      → bigint
+# Integer   → int
+# String    → varchar(length || 255)
+# BigDecimal→ decimal(precision || 19, scale || 2)
+# Instant   → datetime(6)
+#
+# ─ 자동 생성 항목 ─────────────────
+# 각 섹션마다 ${name}SectionUpdatedAt (datetime(6)) — last-write-wins 용
+# created_at / updated_at — JPA Auditing
+# eventId / occurredAt — 모든 event record 의 공통 필드 (코드에서 자동 주입)
+#
+# ─ 생성되는 파일 ──────────────────
+# screens/${screen}/
+#   entity/${Screen}View.java
+#   repository/${Screen}ViewRepository.java
+#   service/${Screen}WriteService.java
+#   service/${Screen}QueryService.java
+#   handler/${Screen}SqsHandlers.java
+#   event/${Section}ChangedEvent.java  (섹션 수만큼)
+#   api/${Screen}Controller.java
+#   api/${Screen}Response.java
+# resources/db/migration/V{n}__init_${screen}_view.sql

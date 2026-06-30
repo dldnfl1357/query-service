@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: query-service
+
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/query_service?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:50}
+      minimum-idle: 10
+      connection-timeout: 3000
+
+  jpa:
+    hibernate:
+      ddl-auto: ${DDL_AUTO:validate}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          batch_size: 100
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+    open-in-view: false
+
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION:ap-northeast-2}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY:test}
+        secret-key: ${AWS_SECRET_KEY:test}
+      sqs:
+        endpoint: ${SQS_ENDPOINT:}
+        listener:
+          max-concurrent-messages: 50
+          max-messages-per-poll: 10
+          poll-timeout: 10s
+
+query-service:
+  queues:
+    order: ${QUEUE_ORDER:order-changed}
+    member: ${QUEUE_MEMBER:member-changed}
+    product: ${QUEUE_PRODUCT:product-changed}
+    delivery: ${QUEUE_DELIVERY:delivery-changed}
+  idempotency:
+    retention: P7D
+    cleanup-cron: "0 0 4 * * *"
+
+logging:
+  level:
+    com.example.queryservice: DEBUG
+    io.awspring.cloud.sqs: INFO
